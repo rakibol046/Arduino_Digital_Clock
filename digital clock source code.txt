@@ -1,0 +1,361 @@
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+int btn1, btn2, btn3, btn4;
+int seconds = 15, minutes = 59, hours = 12, mseconds, ampm = 0;
+int Alarm_seconds = 0, Alarm_minutes = 0, Alarm_hours = 7;
+int timerSeconds = 0, timerMinutes = 0, timerHours = 0, timerRunTime = 0, timerMseconds = 0, timerLastTime = 0, stoptimer = 0;
+int mode = 0;
+const int pushbtn1 = 10;
+const int pushbtn2 = 9;
+const int pushbtn3 = 8;
+const int pushbtn4 = 7;
+const int buzzer = 6;
+
+unsigned long runTime = 0, lastTime = 0;
+void setup() {
+  lcd.begin(16, 2);
+  pinMode(pushbtn1, INPUT);
+  pinMode(pushbtn2, INPUT);
+  pinMode(pushbtn3, INPUT);
+  pinMode(pushbtn4, INPUT);
+  pinMode(buzzer, OUTPUT);
+}
+
+void loop() {
+  if (mode == 1) {
+    setAlarm();
+  } else if (mode == 2) {
+    timer();
+
+  } else if (mode == 3) {
+    changeTime();
+
+  } else {
+    time();
+  }
+
+}
+
+void time() {
+  lcd.clear();
+  while (1) {
+
+    lcd.setCursor(6, 0);
+    lcd.print("Time");
+    lcd.setCursor(2, 1);
+    if (hours < 10) lcd.print("0");
+    lcd.print(hours);
+    lcd.print(":");
+    if (minutes < 10) lcd.print("0");
+    lcd.print(minutes);
+    lcd.print(":");
+    if (seconds < 10) lcd.print("0");
+    lcd.print(seconds);
+    delay(1000);
+    if (ampm % 2 == 0)
+      lcd.print(" AM");
+    else
+      lcd.print(" PM");
+
+    if (Alarm_hours == hours && Alarm_minutes == minutes && seconds <= 10) {
+      tone(buzzer, 1000);
+      delay(1000);
+      noTone(buzzer);
+
+    }
+
+    btn1 = digitalRead(pushbtn1);
+    if (btn1 == 1) {
+      mode = 1;
+      break;
+    }
+
+    clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+
+  }
+
+}
+
+void clock(int * pHours, int * pMinutes, int * pSeconds, int * pMSecond, unsigned long * pRunTime, unsigned long * pLastTime) {
+  * pRunTime = millis();
+  * pMSecond = * pRunTime - * pLastTime;
+  * pLastTime = * pRunTime;
+
+  if ( * pMSecond >= 1000) {
+    * pSeconds += ( * pMSecond / 1000);
+    * pMSecond %= 1000;
+  }
+
+  if ( * pSeconds >= 60) {
+    * pMinutes = * pMinutes + ( * pSeconds / 60);
+    * pSeconds = * pSeconds % 60;
+  }
+  if ( * pMinutes >= 60) {
+    * pHours = * pHours + ( * pMinutes / 60);
+    * pMinutes = * pMinutes % 60;
+  }
+  if ( * pHours >= 13) {
+    * pHours = 1;
+    ampm++;
+  }
+
+}
+
+void Alarm_clock(int * pHours, int * pMinutes) {
+
+  if ( * pMinutes >= 60) {
+    * pHours = * pHours + ( * pMinutes / 60);
+    * pMinutes = * pMinutes % 60;
+  }
+  if ( * pHours >= 13) {
+    * pHours = 1;
+  }
+
+}
+
+void Timer_clock(int * pMinutes, int * pSeconds, int * pMSecond, int * pLastTime, int * runTime) {
+  * runTime = millis();
+  * pMSecond = * runTime - * pLastTime;
+  * pLastTime = * runTime;
+
+  if ( * pMSecond >= 1000) {
+    * pSeconds -= ( * pMSecond / 1000);
+    * pMSecond %= 1000;
+  }
+
+  if ( * pSeconds <= 0) {
+    if ( * pMinutes == 0 & * pSeconds < 0) {
+      tone(buzzer, 1000);
+      delay(1000);
+      noTone(buzzer);
+      stoptimer = 1;
+      * pMinutes = 0;
+      * pSeconds = 0;
+      * pLastTime = 0;
+    } else if ( * pMinutes > 0) {
+      * pMinutes -= 1;
+      * pSeconds = 59;
+    }
+  }
+
+}
+
+void setAlarm() {
+  lcd.clear();
+  while (1) {
+
+    lcd.setCursor(3, 0);
+    lcd.print("_Set Alarm_");
+    lcd.setCursor(2, 1);
+    if (Alarm_hours < 10) lcd.print("0");
+    lcd.print(Alarm_hours);
+    lcd.print(":");
+    if (Alarm_minutes < 10) lcd.print("0");
+    lcd.print(Alarm_minutes);
+    lcd.print(":");
+
+    lcd.print("00");
+    delay(1000);
+    if (ampm % 2 == 0)
+      lcd.print(" AM");
+    else
+      lcd.print(" PM");
+
+    btn1 = digitalRead(pushbtn1);
+    btn4 = digitalRead(pushbtn4);
+
+    if (btn1 == 1) {
+      mode = 2;
+      break;
+    }
+    if (btn4 == 1) {
+      lcd.clear();
+      while (1) {
+        lcd.setCursor(4, 0);
+        lcd.print("Set now");
+        lcd.setCursor(2, 1);
+        if (Alarm_hours < 10) lcd.print("0");
+        lcd.print(Alarm_hours);
+        lcd.print(":");
+        if (Alarm_minutes < 10) lcd.print("0");
+        lcd.print(Alarm_minutes);
+        lcd.print(":");
+        lcd.print("00");
+        delay(1000);
+        if (ampm % 2 == 0)
+          lcd.print(" AM");
+        else
+          lcd.print(" PM");
+
+        btn2 = digitalRead(pushbtn2);
+        btn3 = digitalRead(pushbtn3);
+        btn4 = digitalRead(pushbtn4);
+        if (btn2 == 1)
+          Alarm_hours++;
+        if (btn3 == 1)
+          Alarm_minutes++;
+        if (btn4 == 1) {
+          lcd.setCursor(0, 0);
+          lcd.print("Alarm set confirmed");
+          delay(200);
+          lcd.clear();
+          break;
+        }
+        Alarm_clock( & Alarm_hours, & Alarm_minutes);
+        clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+      }
+    }
+
+    clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+
+  }
+}
+
+void timer() {
+  lcd.clear();
+
+  while (1) {
+
+    lcd.setCursor(6, 0);
+    lcd.print("Timer");
+    lcd.setCursor(4, 1);
+    lcd.print("00");
+    lcd.print(":");
+    if (timerMinutes < 10) lcd.print("0");
+    lcd.print(timerMinutes);
+    lcd.print(":");
+    if (timerSeconds < 10) lcd.print("0");
+    lcd.print(timerSeconds);
+    delay(1000);
+
+    btn1 = digitalRead(pushbtn1);
+    btn2 = digitalRead(pushbtn2);
+    btn3 = digitalRead(pushbtn3);
+    btn4 = digitalRead(pushbtn4);
+
+    if (btn1 == 1) {
+      mode = 3;
+      break;
+    }
+
+    if (btn2 == 1) {
+
+      timerMinutes = timerMinutes + 1;
+    }
+    if (btn3 == 1) {
+
+      timerSeconds = timerSeconds + 1;
+      if (timerSeconds > 59)
+        timerSeconds = 0;
+    }
+    if (btn4 == 1) {
+
+      while (1) {
+
+        lcd.setCursor(6, 0);
+        lcd.print("Timer");
+        lcd.setCursor(4, 1);
+        lcd.print("00");
+        lcd.print(":");
+        if (timerMinutes < 10) lcd.print("0");
+        lcd.print(timerMinutes);
+        lcd.print(":");
+        if (timerSeconds < 10) lcd.print("0");
+        lcd.print(timerSeconds);
+        delay(1000);
+
+        if (stoptimer == 1) {
+          stoptimer = 0;
+
+          break;
+        }
+        btn3 = digitalRead(pushbtn3);
+        if (btn3 == 1) {
+          timerLastTime = 0;
+          timerMinutes = 0;
+          timerSeconds = 0;
+          break;
+
+        }
+
+        Timer_clock( & timerMinutes, & timerSeconds, & timerMseconds, & timerLastTime, & timerRunTime);
+        clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+
+      }
+
+    }
+
+    clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+  }
+
+}
+
+void changeTime() {
+  lcd.clear();
+
+  while (1) {
+
+    lcd.setCursor(3, 0);
+    lcd.print("_Set Time_");
+    lcd.setCursor(2, 1);
+    if (hours < 10) lcd.print("0");
+    lcd.print(hours);
+    lcd.print(":");
+    if (minutes < 10) lcd.print("0");
+    lcd.print(minutes);
+    lcd.print(":");
+    if (seconds < 10) lcd.print("0");
+    lcd.print(seconds);
+    delay(1000);
+    if (ampm % 2 == 0)
+      lcd.print(" AM");
+    else
+      lcd.print(" PM");
+
+    btn1 = digitalRead(pushbtn1);
+    btn4 = digitalRead(pushbtn4);
+
+    if (btn1 == 1) {
+      mode = 0;
+      break;
+    }
+    if (btn4 == 1) {
+      lcd.clear();
+      while (1) {
+        lcd.setCursor(3, 0);
+        lcd.print("change now");
+        lcd.setCursor(2, 1);
+        if (hours < 10) lcd.print("0");
+        lcd.print(hours);
+        lcd.print(":");
+        if (minutes < 10) lcd.print("0");
+        lcd.print(minutes);
+        lcd.print(":");
+        if (seconds < 10) lcd.print("0");
+        lcd.print(seconds);
+        delay(1000);
+        if (ampm % 2 == 0)
+          lcd.print(" AM");
+        else
+          lcd.print(" PM");
+
+        btn2 = digitalRead(pushbtn2);
+        btn3 = digitalRead(pushbtn3);
+        btn4 = digitalRead(pushbtn4);
+        if (btn2 == 1)
+          hours++;
+        if (btn3 == 1)
+          minutes++;
+        if (btn4 == 1)
+          break;
+
+        clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+      }
+    }
+
+    clock( & hours, & minutes, & seconds, & mseconds, & runTime, & lastTime);
+
+  }
+
+}
